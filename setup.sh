@@ -38,7 +38,7 @@ for i in {1..30}; do
         break
     fi
     echo -n "."
-    sleep 1
+    sleep 2
 done
 
 # Wait for MCP server
@@ -49,7 +49,18 @@ for i in {1..30}; do
         break
     fi
     echo -n "."
-    sleep 1
+    sleep 2
+done
+
+# Wait for Streamlit UI
+echo -n "Waiting for Streamlit UI..."
+for i in {1..30}; do
+    if curl -f http://localhost:8501 > /dev/null 2>&1; then
+        echo -e " ${GREEN}✓${NC}"
+        break
+    fi
+    echo -n "."
+    sleep 2
 done
 
 echo ""
@@ -60,17 +71,19 @@ echo ""
 echo -e "${GREEN}✅ Setup complete!${NC}"
 echo ""
 echo -e "${GREEN}🔗 Services:${NC}"
-echo "   • API Docs:   http://localhost:3001/docs"
-echo "   • Health:     http://localhost:3001/health"
-echo "   • Ollama API: http://localhost:11434"
-echo "   • PostgreSQL: localhost:5432"
+echo "   • MCP API Docs:   http://localhost:3001/docs"
+echo "   • MCP Health:     http://localhost:3001/health"
+echo "   • Ollama API:     http://localhost:11434"
+echo "   • PostgreSQL:     localhost:5432"
+echo "   • Streamlit UI:   http://localhost:8501"
 echo ""
 echo -e "${YELLOW}📝 View logs:${NC}"
 echo "   docker-compose logs -f mcp-server"
+echo "   docker-compose logs -f ui"
 echo ""
-echo -e "${YELLOW}🧪 Test query:${NC}"
-echo '   curl -X POST http://localhost:3001/ask \\'
-echo '     -H "Content-Type: application/json" \\'
+echo -e "${YELLOW}🧪 Test query via MCP API:${NC}"
+echo '   curl -X POST http://localhost:3001/ask \\' 
+echo '     -H "Content-Type: application/json" \\' 
 echo '     -d '"'"'{"question": "Show me all users"}'"'"''
 echo ""
 echo -e "${YELLOW}⚠️ Note:${NC} First query may take 1-2 minutes while model initializes"
