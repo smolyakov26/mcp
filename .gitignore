@@ -1,0 +1,9 @@
+# Postgres data
+pg_data/
+
+# Ollama models
+ollama/
+
+# Python cache
+__pycache__/
+*.pyc

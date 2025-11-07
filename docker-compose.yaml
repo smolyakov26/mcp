@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: local-db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: appdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_DEVICE=cpu
+    volumes:
+      - ollama:/root/.ollama
+
+  mcp-server:
+    build: ./mcp
+    container_name: mcp-server
+    depends_on:
+      - db
+      - ollama
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./mcp:/app
+    command: python3 server.py
+
+
+volumes:
+  pg_data:
+  ollama:

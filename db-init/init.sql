@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO users (name)
+SELECT 'Alice' WHERE NOT EXISTS (SELECT 1 FROM users WHERE name='Alice');
+INSERT INTO users (name)
+SELECT 'Bob' WHERE NOT EXISTS (SELECT 1 FROM users WHERE name='Bob');
+INSERT INTO users (name)
+SELECT 'Charlie' WHERE NOT EXISTS (SELECT 1 FROM users WHERE name='Charlie');
