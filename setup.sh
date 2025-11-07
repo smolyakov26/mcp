@@ -1,35 +1,76 @@
 #!/bin/bash
+set -e
 
-echo "🛑 Stopping old containers..."
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo -e "${YELLOW}🛑 Stopping old containers...${NC}"
 docker-compose down -v
 
-echo "🏗️ Building containers..."
+echo -e "${YELLOW}🏗️ Building containers...${NC}"
 docker-compose build --no-cache
 
-echo "🚀 Starting containers..."
+echo -e "${YELLOW}🚀 Starting containers...${NC}"
 docker-compose up -d
 
 echo ""
-echo "⏳ Waiting for services to be ready..."
-sleep 5
+echo -e "${YELLOW}⏳ Waiting for services to be ready...${NC}"
+
+# Wait for database
+echo -n "Waiting for PostgreSQL..."
+for i in {1..30}; do
+    if docker-compose exec -T db pg_isready -U user -d appdb > /dev/null 2>&1; then
+        echo -e " ${GREEN}✓${NC}"
+        break
+    fi
+    echo -n "."
+    sleep 1
+done
+
+# Wait for Ollama
+echo -n "Waiting for Ollama..."
+for i in {1..30}; do
+    if curl -f http://localhost:11434/api/tags > /dev/null 2>&1; then
+        echo -e " ${GREEN}✓${NC}"
+        break
+    fi
+    echo -n "."
+    sleep 1
+done
+
+# Wait for MCP server
+echo -n "Waiting for MCP server..."
+for i in {1..30}; do
+    if curl -f http://localhost:3001/health > /dev/null 2>&1; then
+        echo -e " ${GREEN}✓${NC}"
+        break
+    fi
+    echo -n "."
+    sleep 1
+done
 
 echo ""
-echo "📊 Checking service status..."
+echo -e "${GREEN}📊 Service status:${NC}"
 docker-compose ps
 
 echo ""
-echo "📝 Follow the logs with:"
-echo "   docker-compose logs -f mcp-server"
+echo -e "${GREEN}✅ Setup complete!${NC}"
 echo ""
-echo "✅ Setup complete!"
-echo ""
-echo "🔗 Services:"
-echo "   • FastAPI:    http://localhost:3001"
+echo -e "${GREEN}🔗 Services:${NC}"
+echo "   • API Docs:   http://localhost:3001/docs"
 echo "   • Health:     http://localhost:3001/health"
 echo "   • Ollama API: http://localhost:11434"
 echo "   • PostgreSQL: localhost:5432"
 echo ""
-echo "🧪 Test with:"
-echo '   curl -X POST http://localhost:3001/ask -H "Content-Type: application/json" -d '"'"'{"question": "Show me all users"}'"'"''
+echo -e "${YELLOW}📝 View logs:${NC}"
+echo "   docker-compose logs -f mcp-server"
 echo ""
-echo "⚠️ Note: First request may take 2-3 minutes while Ollama downloads the qwen2.5-coder model (~3GB)"
+echo -e "${YELLOW}🧪 Test query:${NC}"
+echo '   curl -X POST http://localhost:3001/ask \\'
+echo '     -H "Content-Type: application/json" \\'
+echo '     -d '"'"'{"question": "Show me all users"}'"'"''
+echo ""
+echo -e "${YELLOW}⚠️ Note:${NC} First query may take 1-2 minutes while model initializes"

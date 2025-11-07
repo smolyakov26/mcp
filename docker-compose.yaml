@@ -16,6 +16,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - app-network
 
   ollama:
     image: ollama/ollama:latest
@@ -24,7 +26,15 @@ services:
       - "11434:11434"
     volumes:
       - ollama:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
     restart: unless-stopped
+    networks:
+      - app-network
 
   mcp-server:
     build: ./mcp
@@ -32,15 +42,28 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      ollama:
+        condition: service_healthy
     ports:
       - "3001:3001"
     volumes:
       - ./mcp:/app
-    command: python3 server.py
     environment:
       - PYTHONUNBUFFERED=1
+      - DB_HOST=db
+      - DB_USER=user
+      - DB_PASSWORD=pass
+      - DB_NAME=appdb
+      - OLLAMA_URL=http://ollama:11434
+      - MODEL_NAME=qwen2.5-coder:1.5b
     restart: unless-stopped
+    networks:
+      - app-network
 
 volumes:
   pg_data:
   ollama:
+
+networks:
+  app-network:
+    driver: bridge
